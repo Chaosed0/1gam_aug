@@ -28,7 +28,8 @@ require(['jquery', './Util', './Constants', './board',
         
         if (cell != null && cell != highlightedCell) {
             context.beginPath();
-            context.strokeStyle = 'grey';
+            context.fillStyle = 'rgba(125,125,125,0.5)';
+            context.lineWidth = 3;
             for (var i = 0; i < cell.length; i++) {
                 if (i == 0) {
                     context.moveTo(cell[i].x, cell[i].y);
@@ -36,7 +37,9 @@ require(['jquery', './Util', './Constants', './board',
                     context.lineTo(cell[i].x, cell[i].y);
                 }
             }
+            context.closePath();
             context.fill();
+            context.stroke();
         }
         highlightedCell = cell;
     });
