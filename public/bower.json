@@ -1,0 +1,24 @@
+{
+  "name": "ld32",
+  "version": "0.0.1",
+  "homepage": "https://github.com/chaosed0/LD32",
+  "authors": [
+    "Ed Lu <chaosed0@gmail.com>"
+  ],
+  "description": "Ludum Dare 32",
+  "main": "scripts/main.js",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "~2.1.1",
+    "requirejs": "~2.1.15",
+    "seedrandom": "~2.3.11"
+  }
+}
