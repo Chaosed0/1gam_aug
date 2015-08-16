@@ -44,10 +44,10 @@ define(['jquery', './Util', './Constants'],
     }
 
     Tile.Marks = {
-        NONE: 0,
-        X: 1,
-        Y: 2,
-        J: 3,
+        X: 0,
+        Y: 1,
+        J: 2,
+        NONE: 3,
         LENGTH: 4
     };
 

@@ -9,7 +9,7 @@ require(['jquery', './Util', './Constants', './board', './Tile',
 
     var markSizes = [35, 60, 80];
     var markClasses = ['left', 'mid', 'right']
-    var markSrcs = [null, 'img/X.svg', 'img/O.svg', 'img/J.svg'];
+    var markSrcs = ['img/X.svg', 'img/O.svg', 'img/J.svg'];
     var allMarkClass = 'XOJ';
 
     canvas[0].width = canvas.width();
@@ -99,7 +99,7 @@ require(['jquery', './Util', './Constants', './board', './Tile',
         }
 
         mark++;
-        if (mark >= Tile.Marks.LENGTH) {
+        if (mark >= Tile.Marks.NONE) {
             mark = Tile.Marks.X;
         }
 
