@@ -23,10 +23,9 @@ Server -> Client
 
 room_joined {
     id: number
-    mark: number
 }
 
-for mark, X = 0, O = 1, J = 2
+The id is used as the mark index: X = 0, O = 1, J = 2
 
 player_joined {
     name: string

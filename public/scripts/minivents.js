@@ -1,6 +1,6 @@
 
 define(function() {
-    return function (target) {
+    var minivents = function (target) {
         var events = {}, empty = [];
         target = target || this
         /**
@@ -26,5 +26,7 @@ define(function() {
             list = events[type] || empty, i=0, j
                 while(j=list[i++]) j[0].apply(j[1], args)
         };
-    }
-}
+    };
+
+    return minivents;
+});

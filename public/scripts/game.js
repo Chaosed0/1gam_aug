@@ -1,23 +1,29 @@
 
-require(['jquery', './Util', './Constants', './board', './Tile',
-        ], function($, u, c, Board, Tile) {
+require(['jquery', './Util', './Constants', './GraphicBoard', './FakeComms',
+        ], function($, u, c, GraphicBoard, FakeComms) {
     var canvas = $('#overlay');
     var context = canvas[0].getContext('2d');
     var tower = $('#tictactower');
     var imgrect = tower[0].getBoundingClientRect();
-    var board = new Board({x: imgrect.left, y: imgrect.top});
+    var board = new GraphicBoard({x: imgrect.left, y: imgrect.top});
 
     var markSizes = [35, 60, 80];
     var markClasses = ['left', 'mid', 'right']
     var markSrcs = ['img/X.svg', 'img/O.svg', 'img/J.svg'];
     var allMarkClass = 'XOJ';
 
-    canvas[0].width = canvas.width();
-    canvas[0].height = canvas.height();
-
     var highlightedTile = null;
     var lastDownTile = null;
-    var mark = Tile.Marks.X;
+
+    var players = {};
+    var yourId = -1;
+    var name = 'lolwut';
+    var yourTurn = false;
+
+    var comms = new FakeComms();
+
+    canvas[0].width = canvas.width();
+    canvas[0].height = canvas.height();
 
     var getMousePos = function(canvas, event) {
         var rect = canvas[0].getBoundingClientRect();
@@ -29,8 +35,9 @@ require(['jquery', './Util', './Constants', './board', './Tile',
 
     var putDownMark = function(tile, mark) {
         var coords = tile.getCoords();
-        var markSize = markSizes[coords.z];
-        var markClass = markClasses[coords.x];
+        console.log(coords);
+        var markSize = markSizes[coords.x];
+        var markClass = markClasses[coords.z];
         var markSrc = markSrcs[mark];
 
         var tileCenter = {x: 0, y: 0};
@@ -53,8 +60,6 @@ require(['jquery', './Util', './Constants', './board', './Tile',
         var bounds = markElem[0].getBoundingClientRect();
         markElem.css('left', Math.floor(tileCenter.x - markSize / 2));
         markElem.css('top', Math.floor(tileCenter.y - markSize / 2));
-
-        tile.setMark(mark);
     };
 
     canvas.mousemove(function(event) {
@@ -94,15 +99,64 @@ require(['jquery', './Util', './Constants', './board', './Tile',
             return;
         }
 
-        if (lastDownTile == tile && tile.getMark() == Tile.Marks.NONE) {
-            putDownMark(tile, mark);
-        }
-
-        mark++;
-        if (mark >= Tile.Marks.NONE) {
-            mark = Tile.Marks.X;
+        if (lastDownTile == tile && yourTurn) {
+            comms.sendMessage('place_mark', { position: tile.getCoords() });
         }
 
         lastDownTile = null;
     });
+
+    comms.bindMessage('room_joined', function(data) {
+        yourId = data.id;
+        players[data.id] = { name: name };
+    });
+
+    comms.bindMessage('player_joined', function(data) {
+        players[data.id] = { name: data.name };
+    });
+
+    comms.bindMessage('player_turn', function(data) {
+        if (data.id == yourId) {
+            yourTurn = true;
+        } else {
+            yourTurn = false;
+        }
+    });
+
+    comms.bindMessage('mark_placed', function(data) {
+        putDownMark(board.getTileForCoord(data.position), data.id);
+    });
+
+    comms.bindMessage('game_over', function(data) {
+        $('body').append("<p>Game Over</p>");
+        yourTurn = false;
+    });
+
+    comms.bindMessage('player_left', function(data) {
+        //empty for now
+    });
+
+    comms.bindMessage('error', function(data) {
+        var alertMsg = null;
+        switch(data.type) {
+            case c.server_errors.ROOM_FULL:
+                alertMsg = "Room is full";
+                break;
+            case c.server_errors.NAME_TAKEN:
+                alertMsg = "That name is taken";
+                break;
+            case c.server_errors.INVALID_COORDINATE:
+                alertMsg = "You can't put a piece there";
+                break;
+            case c.server_errors.GENERAL_ERROR:
+                alertMsg = data.data;
+                break;
+        }
+
+        if (alertMsg != null) {
+            alert(alertMsg);
+        }
+    });
+
+    comms.sendMessage('join_room', { room: 'asdg', name: name });
 });
