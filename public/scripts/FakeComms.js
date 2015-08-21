@@ -16,6 +16,12 @@ define(['jquery', './Util', './Constants', './minivents', './board',
         var sender = new minivents();
         var receiver = new minivents();
 
+        var simulate_turns = true;
+
+        if (!simulate_turns) {
+            curPlayer = playerId;
+        }
+
         var constructMessage = function(type, data) {
             return JSON.stringify({
                 type: type,
@@ -31,7 +37,7 @@ define(['jquery', './Util', './Constants', './minivents', './board',
 
         var recvGeneralError = function(msg) {
             recvMessage('error', {
-                error: c.server_errors.GENERAL_ERROR,
+                type: c.server_errors.GENERAL_ERROR,
                 data: msg
             });
         }
@@ -46,6 +52,10 @@ define(['jquery', './Util', './Constants', './minivents', './board',
             receiver.on(type, func);
         }
 
+        this.unbindMessage = function(type, func) {
+            receiver.off(type, func);
+        }
+
         var onJoinRoom = function(room, name) {
             var nameTaken = false;
             for (var id = 0; id < players.length; id++) {
@@ -55,32 +65,34 @@ define(['jquery', './Util', './Constants', './minivents', './board',
             }
 
             if (nameTaken) {
-                sendMessage('error', { 'error': c.server_errors.NAME_TAKEN });
+                recvMessage('error', { 'type': c.server_errors.NAME_TAKEN });
                 return;
             }
 
             players.push({ name: name });
             recvMessage('room_joined', { id: playerId });
             for (var id = 0; id < players.length; id++) {
-                recvMessage('player_joined', players[id]);
+                recvMessage('player_joined', { id: players[id] });
             }
 
-            setTimeout(simulateTurn, 1000);
+            recvMessage('player_turn', { id: curPlayer });
+            if (curPlayer != playerId) {
+                setTimeout(simulateTurn, 1000);
+            }
         }
 
         var onPlaceMark = function(position) {
             if (!board.canPlaceMark(position)) {
-                recvMessage('error', { 'error': c.server_errors.INVALID_COORDINATE });
+                recvMessage('error', { 'type': c.server_errors.INVALID_COORDINATE });
                 return;
+            }
+            if (curPlayer != playerId) {
+                recvGeneralError("It's not your turn!");
             }
             placeMark(position);
         }
 
         var placeMark = function(position) {
-            if (curPlayer != playerId) {
-                recvGeneralError("It's not your turn!");
-            }
-
             winInfo = board.placeMark(position, curPlayer);
 
             recvMessage('mark_placed', { id: curPlayer, position: position });
@@ -88,12 +100,19 @@ define(['jquery', './Util', './Constants', './minivents', './board',
             if (winInfo != null) {
                 recvMessage('game_over', {
                     winner_id: playerId,
-                    winning_marks: winInfo.coords
+                    winning_marks: winInfo
                 });
-            } else if (curPlayer+1 != playerId) {
-                setTimeout(simulateTurn, 1000);
+                curPlayer = -1;
+                simulate_turns = false;
             }
-            curPlayer = (curPlayer+1)%c.Marks.NONE;
+
+            if (simulate_turns) {
+                curPlayer = (curPlayer+1)%c.Marks.NONE;
+                if (curPlayer != playerId) {
+                    setTimeout(simulateTurn, 1000);
+                }
+            }
+
             recvMessage('player_turn', { id: curPlayer });
         }
 

@@ -8,7 +8,20 @@
         <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
     </head>
     <body>
-        <image id="tictactower" src="img/tictactower.png"/>
-        <canvas id="overlay"></canvas>
+        <div id="game_view">
+            <image id="tictactower" src="img/tictactower.png"/>
+            <canvas id="overlay"></canvas>
+        </div>
+        <div id="modal">
+            <div id="message_dialog" class="hidden">
+                <p>lel</p>
+            </div>
+            <div id="login_dialog">
+                <p class="error" id="login_error"></p>
+                <p>Name: <input type="text" id="name_input"></input></p>
+                <p>Room: <input type="text" id="room_input"></input></p>
+                <p><button type="button" id="join_button">Join</button></p>
+            </div>
+        </div>
     </body>
 </html>

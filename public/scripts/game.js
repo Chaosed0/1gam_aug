@@ -20,10 +20,44 @@ require(['jquery', './Util', './Constants', './GraphicBoard', './FakeComms',
     var name = 'lolwut';
     var yourTurn = false;
 
-    var comms = new FakeComms();
+    var CommsType = FakeComms;
+    var serverErrorHandler = null;
+    var comms = null;
 
     canvas[0].width = canvas.width();
     canvas[0].height = canvas.height();
+
+    var hideModal = function() {
+        $('#modal').hide();
+    };
+
+    var getAlertMsg = function(data) {
+        var msg = null;
+        switch(data.type) {
+            case c.server_errors.ROOM_FULL:
+                msg = "Room is full";
+                break;
+            case c.server_errors.NAME_TAKEN:
+                msg = "That name is taken";
+                break;
+            case c.server_errors.INVALID_COORDINATE:
+                msg = "You can't put a piece there";
+                break;
+            case c.server_errors.GENERAL_ERROR:
+            default:
+                msg = data.data;
+                break;
+        }
+        return msg;
+    }
+
+    var alertErrorHandler = function(msg) {
+        alert(msg);
+    }
+
+    var loginErrorHandler = function(msg) {
+        $('#login_error').text(msg);
+    }
 
     var getMousePos = function(canvas, event) {
         var rect = canvas[0].getBoundingClientRect();
@@ -106,57 +140,68 @@ require(['jquery', './Util', './Constants', './GraphicBoard', './FakeComms',
         lastDownTile = null;
     });
 
-    comms.bindMessage('room_joined', function(data) {
-        yourId = data.id;
-        players[data.id] = { name: name };
-    });
+    var bindToComms = function(comms) {
+        comms.bindMessage('room_joined', function(data) {
+            u.assert(data.id !== undefined, "Didn't receive an ID from the server upon joining");
+            yourId = data.id;
+            players[data.id] = { name: name };
+        });
 
-    comms.bindMessage('player_joined', function(data) {
-        players[data.id] = { name: data.name };
-    });
+        comms.bindMessage('player_joined', function(data) {
+            u.assert(data.id !== undefined, "A player joined, but the server didn't send their ID");
+            players[data.id] = { name: data.name };
+        });
 
-    comms.bindMessage('player_turn', function(data) {
-        if (data.id == yourId) {
-            yourTurn = true;
-        } else {
+        comms.bindMessage('player_turn', function(data) {
+            u.assert(data.id !== undefined, "A player's turn started, but the server didn't send their ID");
+            if (data.id == yourId) {
+                yourTurn = true;
+            } else {
+                yourTurn = false;
+            }
+        });
+
+        comms.bindMessage('mark_placed', function(data) {
+            u.assert(data.id !== undefined, "A player placed a mark, but the server didn't send their ID");
+            u.assert(data.position !== undefined, "A player placed a mark, but the server didn't send the position of the mark");
+            putDownMark(board.getTileForCoord(data.position), data.id);
+        });
+
+        comms.bindMessage('game_over', function(data) {
+            u.assert(data.winner_id !== undefined, "The game is over, but the server didn't send the ID of the player who won");
+            u.assert(data.winning_marks !== undefined, "The game is over, but the server didn't send the winning positions");
+            $('body').append("<p>Game Over</p>");
             yourTurn = false;
-        }
-    });
+        });
 
-    comms.bindMessage('mark_placed', function(data) {
-        putDownMark(board.getTileForCoord(data.position), data.id);
-    });
+        comms.bindMessage('player_left', function(data) {
+            u.assert(data.id !== undefined, "A player left, but the server didn't tell us their ID");
+            //empty for now
+        });
 
-    comms.bindMessage('game_over', function(data) {
-        $('body').append("<p>Game Over</p>");
-        yourTurn = false;
-    });
+        comms.bindMessage('error', function(data) {
+            var msg = getAlertMsg(data);
+            if (msg != null && msg !== undefined) {
+                serverErrorHandler(msg);
+            }
+        });
+    };
 
-    comms.bindMessage('player_left', function(data) {
-        //empty for now
-    });
+    $('#join_button').click(function() {
+        var playerName = $('#name_input').val();
+        var roomName = $('#room_input').val();
 
-    comms.bindMessage('error', function(data) {
-        var alertMsg = null;
-        switch(data.type) {
-            case c.server_errors.ROOM_FULL:
-                alertMsg = "Room is full";
-                break;
-            case c.server_errors.NAME_TAKEN:
-                alertMsg = "That name is taken";
-                break;
-            case c.server_errors.INVALID_COORDINATE:
-                alertMsg = "You can't put a piece there";
-                break;
-            case c.server_errors.GENERAL_ERROR:
-                alertMsg = data.data;
-                break;
+        serverErrorHandler = loginErrorHandler;
+        comms = new CommsType();
+        bindToComms(comms);
+
+        var onJoinRoom = function() {
+            hideModal();
+            serverErrorHandler = alertErrorHandler;
+            comms.unbindMessage('player_joined', onJoinRoom);
         }
 
-        if (alertMsg != null) {
-            alert(alertMsg);
-        }
+        comms.bindMessage('player_joined', onJoinRoom);
+        comms.sendMessage('join_room', { room: roomName, name: playerName });
     });
-
-    comms.sendMessage('join_room', { room: 'asdg', name: name });
 });
