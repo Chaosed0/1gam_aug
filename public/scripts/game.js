@@ -67,6 +67,15 @@ require(['jquery', './Util', './Constants', './GraphicBoard', './FakeComms',
         };
     };
 
+    var displayPlayer = function(id) {
+        var playerNameElem = $('#topText');
+        if (id != yourId) {
+            playerNameElem.text(players[id].name + "'s turn");
+        } else {
+            playerNameElem.text("Your turn!");
+        }
+    };
+
     var putDownMark = function(tile, mark) {
         var coords = tile.getCoords();
         console.log(coords);
@@ -159,6 +168,7 @@ require(['jquery', './Util', './Constants', './GraphicBoard', './FakeComms',
             } else {
                 yourTurn = false;
             }
+            displayPlayer(data.id);
         });
 
         comms.bindMessage('mark_placed', function(data) {
@@ -170,7 +180,6 @@ require(['jquery', './Util', './Constants', './GraphicBoard', './FakeComms',
         comms.bindMessage('game_over', function(data) {
             u.assert(data.winner_id !== undefined, "The game is over, but the server didn't send the ID of the player who won");
             u.assert(data.winning_marks !== undefined, "The game is over, but the server didn't send the winning positions");
-            $('body').append("<p>Game Over</p>");
             yourTurn = false;
         });
 

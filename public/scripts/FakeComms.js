@@ -72,7 +72,7 @@ define(['jquery', './Util', './Constants', './minivents', './board',
             players.push({ name: name });
             recvMessage('room_joined', { id: playerId });
             for (var id = 0; id < players.length; id++) {
-                recvMessage('player_joined', { id: players[id] });
+                recvMessage('player_joined', { id: id, name: players[id].name });
             }
 
             recvMessage('player_turn', { id: curPlayer });
