@@ -7,7 +7,7 @@ require.config({
     jquery: "../bower_components/jquery/dist/jquery",
     require: "../bower_components/requirejs/require",
     seedrandom: "../bower_components/seedrandom/seedrandom",
-    util: "./Util"
+    shared: "../shared"
   },
   packages: [
 

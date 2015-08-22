@@ -1,5 +1,5 @@
 
-require(['jquery', './Util', './Constants', './GraphicBoard', './FakeComms',
+require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeComms',
         ], function($, u, c, GraphicBoard, FakeComms) {
     var canvas = $('#overlay');
     var context = canvas[0].getContext('2d');

@@ -1,5 +1,5 @@
 
-define(['jquery', './Util', './Constants', './tile_data'],
+define(['jquery', 'shared/Util', 'shared/Constants', './tile_data'],
         function($, u, c, tile_data) {
 
     var Tile = function(points, coords) {

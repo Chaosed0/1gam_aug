@@ -1,6 +1,6 @@
 
-define(['jquery', './Util', './Constants'],
-        function($, u, c) {
+define(['shared/Util', 'shared/Constants'],
+        function(u, c) {
 
     var offsetCoord = function(coord, offset, amt) {
         if (amt === undefined) {

@@ -1,4 +1,5 @@
 
+/* --- Webserver --- */
 var express = require('express');
 var http = require('http');
 
@@ -12,3 +13,15 @@ app.get('/', function(req, res){
 });
 
 app.listen(8000);
+
+/* --- App server --- */
+var requirejs = require('requirejs');
+
+requirejs.config({
+    nodeRequire: require,
+    paths: {
+        shared: "./public/shared"
+    }
+});
+
+requirejs(['./appserver/server']);

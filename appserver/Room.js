@@ -1,6 +1,6 @@
 
-define(['jquery', 'shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 'shared/minivents', 'shared/Board',
-        ], function($, u, c, connu, minivents, Board) {
+define('ws', 'shared/board'] function(WebSocket, Board) {
+    var players = {};
 
     var FakeComms = function() {
         var self = this;
@@ -22,31 +22,30 @@ define(['jquery', 'shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 's
             curPlayer = playerId;
         }
 
+        var constructMessage = function(type, data) {
+            return JSON.stringify({
+                type: type,
+                data: data
+            });
+        }
+
         var recvMessage = function(type, data) {
-            var msg;
-            if (data === undefined) {
-                msg = type;
-            } else {
-                msg = connu.constructMessage(type, data);
-            }
-            console.log("RECV: " + JSON.stringify(msg));
+            var msg = constructMessage(type, data);
+            console.log("RECV: " + msg);
             receiver.emit(type, data);
         }
 
+        var recvGeneralError = function(msg) {
+            recvMessage('error', {
+                type: c.server_errors.GENERAL_ERROR,
+                data: msg
+            });
+        }
+
         this.sendMessage = function(type, data) {
-            var msg;
-            if (data === undefined) {
-                msg = type;
-            } else {
-                msg = connu.constructMessage(type, data);
-            }
-            console.log("SEND: " + JSON.stringify(msg));
-            var validation_error = connu.validateMessage(msg);
-            if (validation_error !== null) {
-                recvMessage(connu.constructGeneralError(validation_error));
-            } else {
-                sender.emit(type, data);
-            }
+            var msg = constructMessage(type, data);
+            console.log("SEND: " + msg);
+            sender.emit(type, data);
         }
 
         this.bindMessage = function(type, func) {
@@ -88,7 +87,7 @@ define(['jquery', 'shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 's
                 return;
             }
             if (curPlayer != playerId) {
-                recvMessage(connu.constructGeneralError("It's not your turn!"));
+                recvGeneralError("It's not your turn!");
             }
             placeMark(position);
         }
@@ -135,20 +134,25 @@ define(['jquery', 'shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 's
 
         sender.on('join_room', function(data) {
             if (data.room === undefined) {
-                recvMessage(connu.constructGeneralError("join_room message received without room name"));
+                recvGeneralError("join_room message received without room name");
                 return;
             }
             if (data.name === undefined) {
-                recvMessage(connu.constructGeneralError("join_room message received without player name"));
+                recvGeneralError("join_room message received without player name");
                 return;
             }
             onJoinRoom(data.room, data.name);
         });
 
         sender.on('place_mark', function(data) {
+            if (data.position === undefined) {
+                recvGeneralError("place_mark message received without position data");
+                return;
+            }
             onPlaceMark(data.position);
         });
     };
 
     return FakeComms;
+});
 });

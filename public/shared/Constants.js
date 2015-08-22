@@ -11,6 +11,8 @@ define(function() {
         ROOM_FULL: 0,
         NAME_TAKEN: 1,
         INVALID_COORDINATE: 2,
+        INVALID_ROOM_NAME: 3,
+        INVALID_MESSAGE: 4,
         GENERAL_ERROR: 3
     };
     return c;
