@@ -104,16 +104,16 @@ define(['jquery', './Util', './Constants', './minivents', './board',
                 });
                 curPlayer = -1;
                 simulate_turns = false;
-            }
-
-            if (simulate_turns) {
-                curPlayer = (curPlayer+1)%c.Marks.NONE;
-                if (curPlayer != playerId) {
-                    setTimeout(simulateTurn, 1000);
+            } else {
+                if (simulate_turns) {
+                    curPlayer = (curPlayer+1)%c.Marks.NONE;
+                    if (curPlayer != playerId) {
+                        setTimeout(simulateTurn, 1000);
+                    }
                 }
-            }
 
-            recvMessage('player_turn', { id: curPlayer });
+                recvMessage('player_turn', { id: curPlayer });
+            }
         }
 
         var simulateTurn = function() {

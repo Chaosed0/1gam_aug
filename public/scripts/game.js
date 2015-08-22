@@ -19,6 +19,8 @@ require(['jquery', './Util', './Constants', './GraphicBoard', './FakeComms',
     var yourId = -1;
     var name = 'lolwut';
     var yourTurn = false;
+    var playerNameElem = $('#topText');
+    var gameOverElem = $('#topText');
 
     var CommsType = FakeComms;
     var serverErrorHandler = null;
@@ -26,6 +28,38 @@ require(['jquery', './Util', './Constants', './GraphicBoard', './FakeComms',
 
     canvas[0].width = canvas.width();
     canvas[0].height = canvas.height();
+
+    var highlightTile = function(points, style) {
+        if (style && style.fillStyle !== undefined) {
+            context.fillStyle = style.fillStyle;
+        } else {
+            context.fillStyle = 'rgba(125,125,125,0.5)';
+        }
+
+        if (style && style.strokeStyle !== undefined) {
+            context.strokeStyle = style.strokeStyle;
+        } else {
+            context.strokeStyle = '#000';
+        }
+
+        if (style && style.lineWidth !== undefined) {
+            context.lineWidth = style.lineWidth;
+        } else {
+            context.lineWidth = 3;
+        }
+
+        context.beginPath();
+        for (var i = 0; i < points.length; i++) {
+            if (i == 0) {
+                context.moveTo(points[i].x, points[i].y);
+            } else {
+                context.lineTo(points[i].x, points[i].y);
+            }
+        }
+        context.closePath();
+        context.fill();
+        context.stroke();
+    }
 
     var hideModal = function() {
         $('#modal').hide();
@@ -68,11 +102,19 @@ require(['jquery', './Util', './Constants', './GraphicBoard', './FakeComms',
     };
 
     var displayPlayer = function(id) {
-        var playerNameElem = $('#topText');
         if (id != yourId) {
             playerNameElem.text(players[id].name + "'s turn");
         } else {
             playerNameElem.text("Your turn!");
+        }
+    };
+
+    var gameOver = function(data) {
+        var winner = players[data.winner_id];
+        gameOverElem.text(winner.name + " wins!");
+        for (var i = 0; i < data.winning_marks.length; i++) {
+            var tile = board.getTileForCoord(data.winning_marks[i]);
+            highlightTile(tile.getPoints(), { fillStyle: 'rgba(0,255,0,0.5)' });
         }
     };
 
@@ -106,6 +148,10 @@ require(['jquery', './Util', './Constants', './GraphicBoard', './FakeComms',
     };
 
     canvas.mousemove(function(event) {
+        if (!yourTurn) {
+            return;
+        }
+
         var tile = board.getTileForPoint(getMousePos(canvas, event));
         if ((tile == null && highlightedTile != null) || tile != highlightedTile) {
             context.clearRect(0, 0, canvas[0].width, canvas[0].height);
@@ -113,29 +159,25 @@ require(['jquery', './Util', './Constants', './GraphicBoard', './FakeComms',
 
         if (tile != null && tile != highlightedTile) {
             var points = tile.getPoints();
-            context.beginPath();
-            context.fillStyle = 'rgba(125,125,125,0.5)';
-            context.lineWidth = 3;
-            for (var i = 0; i < points.length; i++) {
-                if (i == 0) {
-                    context.moveTo(points[i].x, points[i].y);
-                } else {
-                    context.lineTo(points[i].x, points[i].y);
-                }
-            }
-            context.closePath();
-            context.fill();
-            context.stroke();
+            highlightTile(points);
         }
         highlightedTile = tile;
     });
 
     canvas.mousedown(function(event) {
+        if (!yourTurn) {
+            return;
+        }
+
         var tile = board.getTileForPoint(getMousePos(canvas, event));
         lastDownTile = tile;
     });
 
     canvas.mouseup(function(event) {
+        if (!yourTurn) {
+            return;
+        }
+
         var tile = board.getTileForPoint(getMousePos(canvas, event));
         if (tile == null) {
             lastDownTile = null;
@@ -167,6 +209,7 @@ require(['jquery', './Util', './Constants', './GraphicBoard', './FakeComms',
                 yourTurn = true;
             } else {
                 yourTurn = false;
+                context.clearRect(0, 0, canvas[0].width, canvas[0].height);
             }
             displayPlayer(data.id);
         });
@@ -180,6 +223,7 @@ require(['jquery', './Util', './Constants', './GraphicBoard', './FakeComms',
         comms.bindMessage('game_over', function(data) {
             u.assert(data.winner_id !== undefined, "The game is over, but the server didn't send the ID of the player who won");
             u.assert(data.winning_marks !== undefined, "The game is over, but the server didn't send the winning positions");
+            gameOver(data);
             yourTurn = false;
         });
 
