@@ -1,11 +1,12 @@
 
-require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeComms',
-        ], function($, u, c, GraphicBoard, FakeComms) {
+require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeComms', './Comms',
+        ], function($, u, c, GraphicBoard, FakeComms, Comms) {
     var canvas = $('#overlay');
     var context = canvas[0].getContext('2d');
     var tower = $('#tictactower');
     var imgrect = tower[0].getBoundingClientRect();
     var board = new GraphicBoard({x: imgrect.left, y: imgrect.top});
+    var remoteUrl = "ws://127.0.0.1:46467/";
 
     var markSizes = [35, 60, 80];
     var markClasses = ['left', 'mid', 'right']
@@ -22,7 +23,8 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
     var playerNameElem = $('#topText');
     var gameOverElem = $('#topText');
 
-    var CommsType = FakeComms;
+    //var CommsType = FakeComms;
+    var CommsType = Comms;
     var serverErrorHandler = null;
     var comms = null;
 
@@ -246,15 +248,17 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
 
         serverErrorHandler = loginErrorHandler;
         comms = new CommsType();
-        bindToComms(comms);
+        comms.connect(remoteUrl, function() {
+            bindToComms(comms);
 
-        var onJoinRoom = function() {
-            hideModal();
-            serverErrorHandler = alertErrorHandler;
-            comms.unbindMessage('player_joined', onJoinRoom);
-        }
+            var onJoinRoom = function() {
+                hideModal();
+                serverErrorHandler = alertErrorHandler;
+                comms.unbindMessage('player_joined', onJoinRoom);
+            }
 
-        comms.bindMessage('player_joined', onJoinRoom);
-        comms.sendMessage('join_room', { room: roomName, name: playerName });
+            comms.bindMessage('player_joined', onJoinRoom);
+            comms.sendMessage('join_room', { room: roomName, name: playerName });
+        });
     });
 });

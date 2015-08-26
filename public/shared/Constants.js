@@ -13,6 +13,7 @@ define(function() {
         INVALID_COORDINATE: 2,
         INVALID_ROOM_NAME: 3,
         INVALID_MESSAGE: 4,
+        PARSE_ERROR: 5,
         GENERAL_ERROR: 3
     };
     return c;

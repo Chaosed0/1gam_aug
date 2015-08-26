@@ -9,8 +9,12 @@ define(['shared/Constants'], function(c) {
         };
     }
 
+    ConnectionUtil.constructError = function(error, msg) {
+        return this.constructMessage('error', { type: error, data: msg });
+    };
+
     ConnectionUtil.constructGeneralError = function(msg) {
-        return this.constructMessage('error', { type: c.server_errors.GENERAL_ERROR, data: msg });
+        return this.constructError(c.server_errors.GENERAL_ERROR, msg);
     };
 
     ConnectionUtil.validateMessage = function(msg) {
