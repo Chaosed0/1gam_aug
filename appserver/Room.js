@@ -1,14 +1,15 @@
 
-define(['ws', 'shared/minivents', 'shared/ConnectionUtil', 'shared/board'],
-        function(WebSocket, minivents, connu, Board) {
+define(['ws', 'shared/Util', 'shared/Constants', 'shared/minivents', 'shared/ConnectionUtil', 'shared/board'],
+        function(WebSocket, u, c, minivents, connu, Board) {
     var Room = function() {
         var self = this;
         var players = {};
+        var numPlayers = 0;
         var curPlayer = 0;
         
         var board = new Board();
         var eventer = new minivents();
-        var idToMark = {};
+        var gidToId = {};
         var nextId = 0;
 
         this.bind = function(type, func) {
@@ -16,11 +17,12 @@ define(['ws', 'shared/minivents', 'shared/ConnectionUtil', 'shared/board'],
         };
 
         this.handleMessage = function(message, gid) {
-            var id = idToMark[gid];
+            var id = gidToId[gid];
+            var data = message.data;
             if (message.type == 'join_room') {
-                onJoinRoom(id, message.room, message.name);
+                onJoinRoom(id, data.room, data.name);
             } else if (message.type == 'place_mark') {
-                onPlaceMark(id, message.position);
+                onPlaceMark(id, data.position);
             }
         };
 
@@ -29,7 +31,8 @@ define(['ws', 'shared/minivents', 'shared/ConnectionUtil', 'shared/board'],
                 name: null,
                 socket: ws
             };
-            idToMark[gid] = nextId++;
+            gidToId[gid] = nextId;
+            nextId++;
         };
 
         this.playerLeft = function(ws) {
@@ -42,11 +45,11 @@ define(['ws', 'shared/minivents', 'shared/ConnectionUtil', 'shared/board'],
         }
 
         this.isFull = function() {
-            return players.length === 3;
+            return numPlayers === 3;
         };
 
         this.isEmpty = function() {
-            return players.length === 0;
+            return numPlayers === 0;
         }
 
         var send = function(id, msg) {
@@ -61,26 +64,31 @@ define(['ws', 'shared/minivents', 'shared/ConnectionUtil', 'shared/board'],
 
         var onJoinRoom = function(id, room, name) {
             var nameTaken = false;
-            for (var id = 0; id < players.length; id++) {
-                if (players[id].name == name) {
+            for (var oid = 0; oid < players.length; oid++) {
+                if (players[oid].name == name) {
                     nameTaken = true;
                 }
             }
+            console.log(id, name);
 
             if (nameTaken) {
                 send(id, connu.constructError(c.server_errors.NAME_TAKEN, "That name is already taken by someone in the room"));
                 eventer.emit('leave_room', id);
+                return;
             }
 
-            console.log(id);
             players[id].name = name;
             send(id, connu.constructMessage('room_joined', { id: id }));
-            for (var id = 0; id < players.length; id++) {
-                broadcast(connu.constructMessage('player_joined', { id: id, name: players[id].name }));
+            for (var oid in players) {
+                if (oid != id) {
+                    send(id, connu.constructMessage('player_joined', { id: oid, name: players[oid].name }));
+                }
             }
+            broadcast(connu.constructMessage('player_joined', {id: id, name: players[id].name}));
 
+            numPlayers++;
             if (self.isFull()) {
-                broadcast('player_turn', { id: curPlayer });
+                broadcast(connu.constructMessage('player_turn', { id: curPlayer }));
             }
         }
 
@@ -99,13 +107,13 @@ define(['ws', 'shared/minivents', 'shared/ConnectionUtil', 'shared/board'],
 
             if (winInfo != null) {
                 broadcast(connu.constructMessage('game_over', {
-                    winner_id: playerId,
+                    winner_id: curPlayer,
                     winning_marks: winInfo
                 }));
                 curPlayer = -1;
             } else {
                 curPlayer = (curPlayer+1)%c.Marks.NONE;
-                recvMessage('player_turn', { id: curPlayer });
+                broadcast(connu.constructMessage('player_turn', { id: curPlayer }));
             }
         }
     };

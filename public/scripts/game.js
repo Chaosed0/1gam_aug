@@ -31,6 +31,13 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
     canvas[0].width = canvas.width();
     canvas[0].height = canvas.height();
 
+    var modalMessage = function(message) {
+        $('#message_dialog').text(message);
+        $('#login_dialo').hide();
+        $('#modal').show();
+        $('#message_dialog').show();
+    };
+
     var highlightTile = function(points, style) {
         if (style && style.fillStyle !== undefined) {
             context.fillStyle = style.fillStyle;
@@ -248,17 +255,25 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
 
         serverErrorHandler = loginErrorHandler;
         comms = new CommsType();
-        comms.connect(remoteUrl, function() {
+        comms.bindEvent('open', function() {
             bindToComms(comms);
 
             var onJoinRoom = function() {
                 hideModal();
+                modalMessage("Waiting for other players...");
                 serverErrorHandler = alertErrorHandler;
                 comms.unbindMessage('player_joined', onJoinRoom);
             }
 
-            comms.bindMessage('player_joined', onJoinRoom);
+            var onFirstPlayerTurn = function() {
+                hideModal();
+                comms.unbindMessage('player_turn', onFirstPlayerTurn);
+            }
+
+            comms.bindMessage('room_joined', onJoinRoom);
+            comms.bindMessage('player_turn', onFirstPlayerTurn);
             comms.sendMessage('join_room', { room: roomName, name: playerName });
         });
+        comms.connect(remoteUrl);
     });
 });

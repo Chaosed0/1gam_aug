@@ -4,15 +4,24 @@ define(['jquery', 'shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 's
 
     var Comms = function() {
         var ws = null;
-        var eventer = new minivents();
+        var messageEvents = new minivents();
+        var socketEvents = new minivents();
 
         this.bindMessage = function(type, func) {
-            eventer.on(type, func);
+            messageEvents.on(type, func);
         };
 
-        this.connect = function(url, onConnect) {
+        this.unbindMessage = function(type, func) {
+            messageEvents.off(type, func);
+        };
+
+        this.bindEvent = function(type, func) {
+            socketEvents.on(type, func);
+        }
+
+        this.connect = function(url) {
             ws = new WebSocket(url);
-            ws.onopen = onConnect;
+            ws.onopen = onOpen;
             ws.onmessage = onReceive;
             ws.onerror = onError;
         };
@@ -24,14 +33,18 @@ define(['jquery', 'shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 's
             ws.send(message);
         };
 
-        var onReceive = function(message) {
-            console.log("RECV: " + message.data);
-            var obj = JSON.parse(message.data);
-            eventer.on(obj.type, obj.data);
+        var onOpen = function(openEvent) {
+            socketEvents.emit('open', openEvent);
+        }
+
+        var onReceive = function(messageEvent) {
+            console.log("RECV: " + messageEvent.data);
+            var obj = JSON.parse(messageEvent.data);
+            messageEvents.emit(obj.type, obj.data);
         };
 
-        var onError = function(error) {
-            alert(error);
+        var onError = function(errorEvent) {
+            socketEvents.emit('error', errorEvent);
         }
     };
     

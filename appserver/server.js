@@ -12,6 +12,8 @@ require(['shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 'ws', 'apps
         var id = nextId++;
         var roomId = null;
 
+        console.log("Player ID " + id + " connected");
+
         var send = function(msg) {
             ws.send(JSON.stringify(msg));
         };
@@ -58,9 +60,11 @@ require(['shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 'ws', 'apps
                     rooms.push(new Room());
                     roomId = rooms.length-1;
                     nameToRoom[roomName] = roomId;
+                    console.log("Created room " + roomName + " (" + roomId + ")");
                 }
                 rooms[roomId].playerJoined(id, ws);
                 rooms[roomId].bind('leave_room', checkLeftRoom);
+                console.log("Player ID " + id + " joined " + roomId);
             }
 
             /* Room exists, pass the message along */
