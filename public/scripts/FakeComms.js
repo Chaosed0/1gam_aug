@@ -15,6 +15,7 @@ define(['jquery', 'shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 's
 
         var sender = new minivents();
         var receiver = new minivents();
+        var events = new minivents();
 
         var simulate_turns = true;
 
@@ -31,6 +32,10 @@ define(['jquery', 'shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 's
             }
             console.log("RECV: " + JSON.stringify(msg));
             receiver.emit(type, data);
+        }
+
+        this.connect = function(url) {
+            events.emit('open');
         }
 
         this.sendMessage = function(type, data) {
@@ -55,6 +60,14 @@ define(['jquery', 'shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 's
 
         this.unbindMessage = function(type, func) {
             receiver.off(type, func);
+        }
+
+        this.bindEvent = function(type, func) {
+            events.on(type, func);
+        }
+
+        this.unbindEvent = function(type, func) {
+            events.off(type, func);
         }
 
         var onJoinRoom = function(room, name) {

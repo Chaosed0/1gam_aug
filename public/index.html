@@ -16,14 +16,17 @@
             <canvas id="overlay"></canvas>
         </div>
         <div id="modal">
-            <div id="message_dialog" class="hidden">
-                MESSAGE GOES HERE
+            <div id="waiting_dialog" class="hidden">
+                <p class="text-center">Waiting for players...</p>
+                <p><image src="img/X.svg" class="XOJ_icon"/> - <span id="waiting_playername_0"></span</p>
+                <p><image src="img/O.svg" class="XOJ_icon"/> - <span id="waiting_playername_1"></span</p>
+                <p><image src="img/J.svg" class="XOJ_icon"/> - <span id="waiting_playername_2"></span</p>
             </div>
             <div id="login_dialog">
-                <p class="error" id="login_error"></p>
+                <p class="error text-center" id="login_error"></p>
                 <p>Name: <input type="text" id="name_input"></input></p>
                 <p>Room: <input type="text" id="room_input"></input></p>
-                <p><button type="button" id="join_button">Join</button></p>
+                <p><button class="text-center" type="button" id="join_button">Join</button></p>
             </div>
             </div>
         </div>

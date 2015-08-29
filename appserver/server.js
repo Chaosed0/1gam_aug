@@ -2,7 +2,6 @@
 require(['shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 'ws', 'appserver/Room'],
         function(u, c, connu, ws, Room) {
     var rooms = [];
-    var roomSockets = [];
     var nameToRoom = {};
     var nextId = 0;
 
@@ -77,9 +76,14 @@ require(['shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 'ws', 'apps
 
         ws.on('close', function() {
             if(roomId != null) {
-                rooms[roomId].playerLeft(ws);
+                rooms[roomId].playerLeft(id, ws);
                 if (rooms[roomId].isEmpty()) {
                     delete rooms[roomId];
+                    for (var roomName in nameToRoom) {
+                        if (nameToRoom[roomName] == roomId) {
+                            delete nameToRoom[roomName];
+                        }
+                    }
                 }
             }
         });

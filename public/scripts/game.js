@@ -5,10 +5,12 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
     var context = canvas[0].getContext('2d');
     var tower = $('#tictactower');
     var imgrect = tower[0].getBoundingClientRect();
-    var board = new GraphicBoard({x: imgrect.left, y: imgrect.top});
-    var remoteUrl = "ws://127.0.0.1:46467/";
+    var imgscale = imgrect.width / tower[0].naturalWidth;
+    var board = new GraphicBoard({x: imgrect.left, y: imgrect.top}, imgscale);
+    //var remoteUrl = "ws://127.0.0.1:46467/";
+    var remoteUrl = "ws://45.37.125.236:46467/";
 
-    var markSizes = [35, 60, 80];
+    var markSizes = [35 * imgscale, 60 * imgscale, 80 * imgscale];
     var markClasses = ['left', 'mid', 'right']
     var markSrcs = ['img/X.svg', 'img/O.svg', 'img/J.svg'];
     var allMarkClass = 'XOJ';
@@ -31,12 +33,14 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
     canvas[0].width = canvas.width();
     canvas[0].height = canvas.height();
 
-    var modalMessage = function(message) {
-        $('#message_dialog').text(message);
-        $('#login_dialo').hide();
-        $('#modal').show();
-        $('#message_dialog').show();
-    };
+    var refreshWaitingPlayers = function() {
+        for (var id in players) {
+            if (id >= 3) {
+                continue;
+            }
+            $('#waiting_playername_' + id).text(players[id].name);
+        }
+    }
 
     var highlightTile = function(points, style) {
         if (style && style.fillStyle !== undefined) {
@@ -73,6 +77,18 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
     var hideModal = function() {
         $('#modal').hide();
     };
+
+    var showDialog = function(dialog) {
+        var modal = $('#modal');
+        modal.show();
+        modal.children('div').each(function() {
+            if ($(this).attr('id') == dialog + '_dialog') {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    }
 
     var getAlertMsg = function(data) {
         var msg = null;
@@ -247,31 +263,41 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
                 serverErrorHandler(msg);
             }
         });
+
+        var onJoinRoom = function() {
+            showDialog('waiting');
+            serverErrorHandler = alertErrorHandler;
+            comms.unbindMessage('room_joined', onJoinRoom);
+        }
+
+        var onPlayerJoined = function(data) {
+            refreshWaitingPlayers();
+            showDialog('waiting');
+        }
+
+        var onFirstPlayerTurn = function() {
+            hideModal();
+            comms.unbindMessage('player_turn', onFirstPlayerTurn);
+            comms.unbindMessage('player_joined', onPlayerJoined);
+        }
+
+        comms.bindMessage('room_joined', onJoinRoom);
+        comms.bindMessage('player_joined', onPlayerJoined);
+        comms.bindMessage('player_turn', onFirstPlayerTurn);
     };
 
     $('#join_button').click(function() {
         var playerName = $('#name_input').val();
         var roomName = $('#room_input').val();
 
+        if (roomName == "local") {
+            CommsType = FakeComms;
+        }
+
         serverErrorHandler = loginErrorHandler;
         comms = new CommsType();
         comms.bindEvent('open', function() {
             bindToComms(comms);
-
-            var onJoinRoom = function() {
-                hideModal();
-                modalMessage("Waiting for other players...");
-                serverErrorHandler = alertErrorHandler;
-                comms.unbindMessage('player_joined', onJoinRoom);
-            }
-
-            var onFirstPlayerTurn = function() {
-                hideModal();
-                comms.unbindMessage('player_turn', onFirstPlayerTurn);
-            }
-
-            comms.bindMessage('room_joined', onJoinRoom);
-            comms.bindMessage('player_turn', onFirstPlayerTurn);
             comms.sendMessage('join_room', { room: roomName, name: playerName });
         });
         comms.connect(remoteUrl);

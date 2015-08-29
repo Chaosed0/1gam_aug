@@ -35,12 +35,13 @@ define(['ws', 'shared/Util', 'shared/Constants', 'shared/minivents', 'shared/Con
             nextId++;
         };
 
-        this.playerLeft = function(ws) {
-            for (var i = 0; i < players.length; i++) {
-                if (players[i].socket == ws) {
-                    delete players[i];
-                    return;
-                }
+        this.playerLeft = function(gid, ws) {
+            var id = gidToId[gid];
+            if (id in players) {
+                delete players[id];
+                numPlayers--;
+            } else {
+                console.log("ERROR: bad id " + id + " passed to playerLeft!");
             }
         }
 

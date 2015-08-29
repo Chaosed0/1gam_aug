@@ -34,13 +34,9 @@ define(['jquery', 'shared/Util', 'shared/Constants', './tile_data'],
         }
     }
 
-    var GraphicBoard = function(origin) {
+    var GraphicBoard = function(origin, scale) {
         var board_origin = origin;
         var tiles = [];
-
-        var offsetTile = function(cell, offset) {
-            return newTile;
-        }
 
         var coordToId = function(coord) {
             return coord.y * 8 + ( coord.x <= 1 ? coord.x*3 : 5 ) + (coord.x == 1 && coord.z == 2 ? 1 : coord.z);
@@ -57,15 +53,15 @@ define(['jquery', 'shared/Util', 'shared/Constants', './tile_data'],
 
         for (var i = 0; i < tile_data.origins.length; i++) {
             var origin = tile_data.origins[i];
-            origin.x += board_origin.x;
-            origin.y += board_origin.y;
+            origin.x = origin.x * scale + board_origin.x;
+            origin.y = origin.y * scale + board_origin.y;
             for (var j = 0; j < tile_data.tiles.length; j++) {
                 var beforeOffset = tile_data.tiles[j];
                 var points = new Array(beforeOffset.length);
                 for (var k = 0; k < beforeOffset.length; k++) {
                     points[k] = {
-                        x: beforeOffset[k].x + origin.x,
-                        y: beforeOffset[k].y + origin.y
+                        x: beforeOffset[k].x * scale + origin.x,
+                        y: beforeOffset[k].y * scale + origin.y
                     };
                 }
                 var coords = {
