@@ -85,6 +85,13 @@ define(['jquery', 'shared/Util', 'shared/Constants', './tile_data'],
         this.getTileForCoord = function(coord) {
             return tiles[coordToId(coord)];
         }
+
+        this.getTileForId = function(id) {
+            if (id < 0 || id >= tiles.length) {
+                return null;
+            }
+            return tiles[id];
+        }
     }
 
     return GraphicBoard;

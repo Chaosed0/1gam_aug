@@ -19,6 +19,7 @@ define(['shared/Util', 'shared/Constants'],
     var Board = function() {
         var self = this;
         var tiles = new Array(24);
+        var tilePlaced = false;
 
         for (var i = 0; i < tiles.length; i++) {
             tiles[i] = c.Marks.NONE;
@@ -37,6 +38,10 @@ define(['shared/Util', 'shared/Constants'],
                 y: id / 8,
                 z: (tile < 4 ? tile % 3 : (tile == 4 ? 2 : tile-5))
             };
+        }
+
+        this.getState = function() {
+            return tiles;
         }
 
         this.canPlaceMark = function(coord) {

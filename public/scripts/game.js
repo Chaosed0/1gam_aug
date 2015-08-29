@@ -19,6 +19,7 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
     var lastDownTile = null;
 
     var players = {};
+    var numPlayers = 0;
     var yourId = -1;
     var name = 'lolwut';
     var yourTurn = false;
@@ -146,7 +147,6 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
 
     var putDownMark = function(tile, mark) {
         var coords = tile.getCoords();
-        console.log(coords);
         var markSize = markSizes[coords.x];
         var markClass = markClasses[coords.z];
         var markSrc = markSrcs[mark];
@@ -218,15 +218,42 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
     });
 
     var bindToComms = function(comms) {
+        var onGameStart = function() {
+            var countdown = 3;
+            var doCountdown = function() {
+                if (countdown == 0) {
+                    hideModal();
+                    $('#waiting_message').text("Waiting for players...");
+                    countdown = -1;
+                } else {
+                    $('#waiting_message').text("Starting game in " + countdown + " seconds");
+                    countdown--;
+                }
+
+                if (countdown >= 0) {
+                    window.setTimeout(doCountdown, 1000);
+                }
+            };
+            doCountdown();
+        }
+
         comms.bindMessage('room_joined', function(data) {
             u.assert(data.id !== undefined, "Didn't receive an ID from the server upon joining");
             yourId = data.id;
             players[data.id] = { name: name };
+
+            showDialog('waiting');
+            serverErrorHandler = alertErrorHandler;
         });
 
         comms.bindMessage('player_joined', function(data) {
             u.assert(data.id !== undefined, "A player joined, but the server didn't send their ID");
             players[data.id] = { name: data.name };
+            refreshWaitingPlayers();
+            numPlayers++;
+            if (numPlayers >= 3) {
+                onGameStart();
+            }
         });
 
         comms.bindMessage('player_turn', function(data) {
@@ -256,6 +283,21 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
         comms.bindMessage('player_left', function(data) {
             u.assert(data.id !== undefined, "A player left, but the server didn't tell us their ID");
             delete players[data.id];
+            refreshWaitingPlayers();
+            numPlayers--;
+            if (numPlayers < 3) {
+                showDialog('waiting');
+            }
+        });
+
+        comms.bindMessage('board_state', function(data) {
+            u.assert(data.state !== undefined, "Server sent us a board_state message without any state");
+            u.assert(data.state.length == 24, "Server sent us a board state with length " + data.state.length);
+            for (var i = 0; i < data.state.length; i++) {
+                if (data.state[i] != c.Marks.NONE) {
+                    putDownMark(board.getTileForId(i), data.state[i]);
+                }
+            }
         });
 
         comms.bindMessage('error', function(data) {
@@ -264,39 +306,6 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
                 serverErrorHandler(msg);
             }
         });
-
-        var onJoinRoom = function() {
-            showDialog('waiting');
-            serverErrorHandler = alertErrorHandler;
-            comms.unbindMessage('room_joined', onJoinRoom);
-        }
-
-        var onPlayersChanged = function(data) {
-            refreshWaitingPlayers();
-        }
-
-        var onFirstPlayerTurn = function() {
-            var countdown = 3;
-            var doCountdown = function() {
-                if (countdown == 0) {
-                    hideModal();
-                    $('#waiting_message').text("Waiting for players...");
-                } else {
-                    $('#waiting_message').text("Starting game in " + countdown + " seconds");
-                    countdown--;
-                }
-            };
-            doCountdown();
-            window.setInterval(doCountdown, 1000);
-            comms.unbindMessage('player_joined', onPlayersChanged);
-            comms.unbindMessage('player_left', onPlayersChanged);
-            comms.unbindMessage('player_turn', onFirstPlayerTurn);
-        }
-
-        comms.bindMessage('room_joined', onJoinRoom);
-        comms.bindMessage('player_joined', onPlayersChanged);
-        comms.bindMessage('player_left', onPlayersChanged);
-        comms.bindMessage('player_turn', onFirstPlayerTurn);
     };
 
     $('#join_button').click(function() {

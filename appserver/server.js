@@ -49,11 +49,6 @@ require(['shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 'ws', 'apps
                 var roomName = message.data.room;
                 if (roomName in nameToRoom) {
                     roomId = nameToRoom[roomName];
-                    /* Check if the room is full */
-                    if (rooms[roomId].isFull()) {
-                        roomId = null;
-                        send(connu.constructError(c.server_errors.ROOM_FULL, "The room is full"));
-                    }
                 } else {
                     /* Room doesn't exist, create it */
                     rooms.push(new Room());

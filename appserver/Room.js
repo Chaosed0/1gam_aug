@@ -10,6 +10,7 @@ define(['ws', 'shared/Util', 'shared/Constants', 'shared/minivents', 'shared/Con
         var board = new Board();
         var eventer = new minivents();
         var gidToId = {};
+        var gameStarted = false;
 
         this.bind = function(type, func) {
             eventer.on(type, func);
@@ -46,13 +47,14 @@ define(['ws', 'shared/Util', 'shared/Constants', 'shared/minivents', 'shared/Con
 
         this.playerLeft = function(gid, ws) {
             var id = gidToId[gid];
-            if (id in players) {
-                delete players[id];
-                numPlayers--;
-                broadcast(connu.constructMessage('player_left', {id: id}));
-            } else {
+            if (!(id in players)) {
                 console.log("ERROR: bad id " + id + " passed to playerLeft!");
+                return;
             }
+
+            delete players[id];
+            numPlayers--;
+            broadcast(connu.constructMessage('player_left', {id: id}));
         }
 
         this.isFull = function() {
@@ -88,6 +90,12 @@ define(['ws', 'shared/Util', 'shared/Constants', 'shared/minivents', 'shared/Con
                 return;
             }
 
+            if (self.isFull()) {
+                send(id, connu.constructError(c.server_errors.ROOM_FULL, "The room is full"));
+                eventer.emint('leave_room', id);
+                return;
+            }
+
             players[id].name = name;
             send(id, connu.constructMessage('room_joined', { id: id }));
             for (var oid in players) {
@@ -99,12 +107,18 @@ define(['ws', 'shared/Util', 'shared/Constants', 'shared/minivents', 'shared/Con
 
             numPlayers++;
             if (self.isFull()) {
-                broadcast(connu.constructMessage('player_turn', { id: curPlayer }));
+                if (!gameStarted) {
+                    gameStarted = true;
+                    broadcast(connu.constructMessage('player_turn', { id: curPlayer }));
+                } else {
+                    send(id, connu.constructMessage('board_state', { state: board.getState() }));
+                    send(id, connu.constructMessage('player_turn', { id: curPlayer }));
+                }
             }
         }
 
         var onPlaceMark = function(id, position) {
-            if (curPlayer != id) {
+            if (curPlayer != id || !self.isFull()) {
                 send(connu.constructError(c.server_errors.NOT_YOUR_TURN, "It's not your turn!"));
                 return;
             }
