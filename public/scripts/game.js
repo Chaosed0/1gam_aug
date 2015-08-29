@@ -34,11 +34,12 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
     canvas[0].height = canvas.height();
 
     var refreshWaitingPlayers = function() {
-        for (var id in players) {
-            if (id >= 3) {
-                continue;
+        for (var id = 0; id < 3; id++) {
+            if (id in players) {
+                $('#waiting_playername_' + id).text(players[id].name);
+            } else {
+                $('#waiting_playername_' + id).text('');
             }
-            $('#waiting_playername_' + id).text(players[id].name);
         }
     }
 
@@ -254,7 +255,7 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
 
         comms.bindMessage('player_left', function(data) {
             u.assert(data.id !== undefined, "A player left, but the server didn't tell us their ID");
-            //empty for now
+            delete players[data.id];
         });
 
         comms.bindMessage('error', function(data) {
@@ -270,19 +271,31 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
             comms.unbindMessage('room_joined', onJoinRoom);
         }
 
-        var onPlayerJoined = function(data) {
+        var onPlayersChanged = function(data) {
             refreshWaitingPlayers();
-            showDialog('waiting');
         }
 
         var onFirstPlayerTurn = function() {
-            hideModal();
+            var countdown = 3;
+            var doCountdown = function() {
+                if (countdown == 0) {
+                    hideModal();
+                    $('#waiting_message').text("Waiting for players...");
+                } else {
+                    $('#waiting_message').text("Starting game in " + countdown + " seconds");
+                    countdown--;
+                }
+            };
+            doCountdown();
+            window.setInterval(doCountdown, 1000);
+            comms.unbindMessage('player_joined', onPlayersChanged);
+            comms.unbindMessage('player_left', onPlayersChanged);
             comms.unbindMessage('player_turn', onFirstPlayerTurn);
-            comms.unbindMessage('player_joined', onPlayerJoined);
         }
 
         comms.bindMessage('room_joined', onJoinRoom);
-        comms.bindMessage('player_joined', onPlayerJoined);
+        comms.bindMessage('player_joined', onPlayersChanged);
+        comms.bindMessage('player_left', onPlayersChanged);
         comms.bindMessage('player_turn', onFirstPlayerTurn);
     };
 

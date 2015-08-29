@@ -10,7 +10,6 @@ define(['ws', 'shared/Util', 'shared/Constants', 'shared/minivents', 'shared/Con
         var board = new Board();
         var eventer = new minivents();
         var gidToId = {};
-        var nextId = 0;
 
         this.bind = function(type, func) {
             eventer.on(type, func);
@@ -26,7 +25,17 @@ define(['ws', 'shared/Util', 'shared/Constants', 'shared/minivents', 'shared/Con
             }
         };
 
+        var getNextId = function() {
+            for (var i = 0; i < 3; i++) {
+                if (!(i in players)) {
+                    return i;
+                }
+            }
+            return null;
+        }
+
         this.playerJoined = function(gid, ws) {
+            var nextId = getNextId();
             players[nextId] = {
                 name: null,
                 socket: ws
@@ -40,6 +49,7 @@ define(['ws', 'shared/Util', 'shared/Constants', 'shared/minivents', 'shared/Con
             if (id in players) {
                 delete players[id];
                 numPlayers--;
+                broadcast(connu.constructMessage('player_left', {id: id}));
             } else {
                 console.log("ERROR: bad id " + id + " passed to playerLeft!");
             }
