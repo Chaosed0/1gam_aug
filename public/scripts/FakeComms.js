@@ -1,5 +1,5 @@
 
-define(['jquery', 'shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 'shared/minivents', 'shared/Board',
+define(['jquery', 'shared/Util', 'shared/Constants', 'shared/ConnectionUtil', 'shared/minivents', 'shared/board',
         ], function($, u, c, connu, minivents, Board) {
 
     var FakeComms = function() {

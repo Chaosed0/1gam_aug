@@ -8,7 +8,7 @@ require(['jquery', 'shared/Util', 'shared/Constants', './GraphicBoard', './FakeC
     var imgscale = imgrect.width / tower[0].naturalWidth;
     var board = new GraphicBoard({x: imgrect.left, y: imgrect.top}, imgscale);
     //var remoteUrl = "ws://127.0.0.1:46467/";
-    var remoteUrl = "ws://45.37.125.236:46467/";
+    var remoteUrl = "wss://straypixels.net:46467/";
 
     var markSizes = [35 * imgscale, 60 * imgscale, 80 * imgscale];
     var markClasses = ['left', 'mid', 'right']
