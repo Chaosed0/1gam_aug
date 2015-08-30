@@ -7,21 +7,22 @@ Board representation
 
 The board looks like this (the X spots aren't playable):
 
-left -----> right     upper
-                        |
-    0  1  2    top      |
-    3  X  4     v       |
-    5  6  7   bottom    |
-                        |
-    8  9  10            |
-    11 X  12            |
-    13 14 15            |
-                        |
-    16 17 18            |
-    19 X  20            v
-    21 22 23          lower
+    left -----> right     upper
+                            |
+        0  1  2    top      |
+        3  X  4     v       |
+        5  6  7   bottom    |
+                            |
+        8  9  10            |
+        11 X  12            |
+        13 14 15            |
+                            |
+        16 17 18            |
+        19 X  20            v
+        21 22 23          lower
 
 The board is indexed from left to right (x), from upper to lower (y), and from top to bottom (z). Some example id to coordinate mappings:
+
     - 0 -> (0,0,0)
     - 1 -> (0,0,1)
     - 3 -> (1,0,0)
